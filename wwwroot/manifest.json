@@ -1,0 +1,15 @@
+{
+  "name": "Московское долголетие",
+  "lang": "ru-RU",
+  "short_name": "Долголетие",
+  "description": "«Московское долголетие» — крупнейший оздоровительный, образовательный и досуговый проект для москвичей старшего возраста",
+  "start_url": "/",
+  "scope": "/",
+  "display": "fullscreen", // standalone
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/favicon.ico"
+    }
+  ]
+}
