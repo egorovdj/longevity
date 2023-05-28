@@ -1,0 +1,65 @@
+﻿<nav class="container-xl flex-wrap flex-lg-nowrap">
+    <a class="navbar-brand" href="/">
+        <img style="height:4rem" src="/images/logo.png" />
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Переключатель навигации">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item col-12 col-lg-auto">
+                <div class="vr d-none d-lg-flex h-100 mx-lg-2"></div>
+                <hr class="d-lg-none my-2 text-white-50">
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                    Начало
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="Catalog">
+                    Все активности
+                </NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="PersonalManager">
+                    Личный менеджер
+                </NavLink>
+            </li>
+        </ul>
+        <ul class="navbar-nav flex-row flex-nowrap ms-md-auto">
+            <li class="nav-item col-3 col-lg-auto" title="Для слабовидящих">
+                <a class="nav-link py-2 px-0 px-lg-2" href="#" id="VisuallyImpaired">
+                    <i class="bi bi-eyeglasses fs-3"></i>
+                    <small class="d-lg-none ms-2">Для слабо&shy;видящих</small>
+                </a>
+            </li>
+            <li class="nav-item col-3 col-lg-auto" title="Тёмная тема">
+                <a class="nav-link py-2 px-0 px-lg-2" href="#" id="SwitchTheme">
+                    <i class="bi bi-moon-stars-fill fs-3"></i>
+                    <small class="d-lg-none ms-2">Тёмная тема</small>
+                </a>
+            </li>
+            <li class="nav-item col-3 col-lg-auto" title="На весь экран">
+                <a class="nav-link py-2 px-0 px-lg-2" href="#" id="FullScreen">
+                    <i class="bi bi-arrows-fullscreen fs-3"></i>
+                    <small class="d-lg-none ms-2">На весь экран</small>
+                </a>
+            </li>
+            <li class="nav-item dropdown col-3 col-lg-auto" title="Личный кабинет">
+                <a class="nav-link dropdown-toggle py-2 px-0 px-lg-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-person-fill text-success fs-3"></i>
+                    <small class="d-lg-none ms-2">Личный кабинет</small>
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><NavLink class="dropdown-item" href="PseudoLogin">Вход</NavLink></li>
+                    <li><NavLink class="dropdown-item" href="PersonalManager">Личный менеджер</NavLink></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><NavLink class="dropdown-item" href="/result/test.csv" download="test.csv">Загрузить test.csv</NavLink></li>
+                    <li><NavLink class="dropdown-item" href="/result/диаграмма посещений.xlsx" download="диаграмма посещений.xlsx">Загрузить диаграмма посещений.xlsx</NavLink></li>
+                    <li><NavLink class="dropdown-item" href="/result/диаграмма посещений сводная.xlsx" download="диаграмма посещений сводная.xlsx">Загрузить диаграмма посещений сводная.xlsx</NavLink></li>
+                </ul>
+            </li>
+        </ul>
+    </div>
+</nav>
