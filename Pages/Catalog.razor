@@ -1,0 +1,134 @@
+﻿@page "/Catalog"
+@using System.Globalization;
+@using CsvHelper;
+@using System.Text.RegularExpressions;
+@using longevity_1._0.Data;
+@using Microsoft.VisualBasic.FileIO;
+@using Microsoft.EntityFrameworkCore;
+@inject RecommendationService Service
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Каталог</PageTitle>
+
+<h2>
+    Каталог активностей долголетия
+    <button id="RefreshButton" class="btn btn-success" @onclick="OnRefresh"><i class="bi bi-heart-fill" role="status" style="width: 1.2rem;height: 1.2rem;"></i>&nbsp;Загрузить занятия</button>
+</h2>
+<div class="row row-cols-1 row-cols-md-2">
+    <div class="col">
+        <div class="form-check form-switch">
+            <input class="form-check-input" @onchange=SwitchOnlineChange type="checkbox" role="switch" id="SwitchOnline">
+            <label class="form-check-label" for="SwitchOnline">Выбрать занятия онлайн (если не выбран, то вживую)</label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" @onchange=ScopeChange type="radio" name="exampleRadios" id="exampleRadios1" value="0" checked>
+            <label class="form-check-label" for="exampleRadios1">
+                Для ума
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" @onchange=ScopeChange type="radio" name="exampleRadios" id="exampleRadios2" value="1">
+            <label class="form-check-label" for="exampleRadios2">
+                Для души
+            </label>
+        </div>
+        <div class="form-check">
+            <input class="form-check-input" @onchange=ScopeChange type="radio" name="exampleRadios" id="exampleRadios3" value="2">
+            <label class="form-check-label" for="exampleRadios3">
+                Для тела
+            </label>
+        </div>
+    </div>
+    <div class="col">
+        <select class="form-select" @onchange=ParentSelectionChange>
+            @foreach (var dict in RecommendationService.dc.Dictionaries.Where(d => d.ParentId == null && d.Scope == Scope))
+            {
+                <option value="@dict.Id">@dict.Title</option>
+            }
+        </select>
+        <select class="form-select" @onchange=MiddleSelectionChange>
+            @foreach (var dict in RecommendationService.dc.Dictionaries.Where(d => d.ParentId == parentId && d.Scope == Scope))
+            {
+                <option value="@dict.Id">@dict.Title</option>
+            }
+        </select>
+        <select class="form-select" @onchange=LowestSelectionChange>
+            @foreach (var dict in RecommendationService.dc.Dictionaries.Where(d => d.ParentId == middleId && d.Scope == Scope))
+            {
+                <option value="@dict.Id">@dict.Title</option>
+            }
+        </select>
+    </div>
+</div>
+<div class="row row-cols-1 row-cols-md-2 g-4">
+    @if (lessons.Count>0)
+        foreach (var group in lessons)
+        {
+        <div class="col">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                </div>
+                <div class="card-body">
+                    <p>@group.DictionaryNavigation.Description</p>
+                </div>
+                <div class="card-footer">
+                    <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                    <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                    <a href="#" class="btn btn-success">Записаться</a>
+                </div>
+            </div>
+        </div>
+        }
+    else
+    {
+        <div>Занятия не найдены</div>
+    }
+</div>
+
+@code {
+    protected List<StudyGroup> lessons = new();
+    protected bool SwitchOnline = false;
+    protected scope Scope = scope.Для_ума;
+    protected int parentId = 631;
+    protected int middleId = 630;
+    protected int lowestId = 122;
+
+    protected async void ParentSelectionChange(dynamic e)
+    {
+        parentId = int.Parse(e.Value);
+    }
+    protected async void MiddleSelectionChange(dynamic e)
+    {
+        middleId = int.Parse(e.Value);
+    }
+    protected async void LowestSelectionChange(dynamic e)
+    {
+        lowestId = int.Parse(e.Value);
+    }
+    protected async void SwitchOnlineChange(dynamic e)
+    {
+        SwitchOnline = e.Value;
+    }
+    protected async void ScopeChange(dynamic e)
+    {
+        Scope = (scope)int.Parse(e.Value);
+    }
+    protected async void OnRefresh(dynamic e)
+    {
+        await jsRuntime.InvokeAsync<string>("RefreshRecommendation");
+        var db = RecommendationService.dc;
+        lessons = db.StudyGroups.Include(st => st.DictionaryNavigation).Where(st => (SwitchOnline ? st.DictionaryNavigation.Title.StartsWith("ОНЛАЙН ") : !st.DictionaryNavigation.Title.StartsWith("ОНЛАЙН ")) && st.DictionaryId == lowestId && st.ActiveSchedule != null && st.PlannedSchedule != null).ToList().Where(st => AvailablePeriod(st, db)).ToList();
+        StateHasChanged();
+        await jsRuntime.InvokeAsync<string>("RefreshRecommendation");
+    }
+    protected bool AvailablePeriod(StudyGroup study, LongevityDbContext db)
+    {
+        Regex regex = new Regex(@"\d{2}\.\d{2}\.\d{4}");
+            string shed = study.PlannedSchedule ?? "" + " " + study.ActiveSchedule ?? "";
+            MatchCollection matches = regex.Matches(shed);
+            for (int i = 1; i < matches.Count; i += 2)
+                if (DateTime.Parse(matches[i].Value) > Service.CurrentDate) return true;
+            return false;
+    }
+}

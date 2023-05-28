@@ -1,0 +1,34 @@
+﻿@page "/PseudoLogin"
+@using System.Globalization;
+@using CsvHelper;
+@using System.Text.RegularExpressions;
+@using longevity_1._0.Data;
+@using Microsoft.VisualBasic.FileIO;
+@using Microsoft.EntityFrameworkCore;
+@inject RecommendationService Service
+@inject IJSRuntime jsRuntime
+
+<h2>Псевдо логин</h2>
+<div class="form-floating mb-3">
+    <input type="text" class="form-control" id="PersonCode" @bind=Service.UID placeholder="Код пользователя">
+    <label for="PersonCode">Код пользователя</label>
+</div>
+<div class="form-floating">
+    <input type="date" class="form-control" id="CurrentDate" @bind=Service.CurrentDate placeholder="Дата входа">
+    <label for="CurrentDate">Дата для которой проводим сеанс</label>
+</div>
+<div class="form-floating">
+    <input type="text" class="form-control" id="PersonName" value=@Service.Person.Name placeholder="ФИО">
+    <label for="PersonName">Как завут пользователя</label>
+</div>
+<div class="form-floating">
+    <input type="date" class="form-control" id="PersonName" value=@Service.Person.BirthDate placeholder="Дата рождения">
+    <label for="PersonBirthDate">Дата рождения пользователя</label>
+</div>
+<br />
+<a class="btn btn-primary float-end" href="PersonalManager"><span class="oi oi-account-login" aria-hidden="true">&nbsp;</span>&nbsp;Войти</a>
+<br />
+
+@code {
+
+}

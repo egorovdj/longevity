@@ -1,0 +1,207 @@
+﻿@page "/PersonalManager"
+@using System.Globalization;
+@using CsvHelper;
+@using System.Text.RegularExpressions;
+@using longevity_1._0.Data;
+@using Microsoft.VisualBasic.FileIO;
+@using Microsoft.EntityFrameworkCore;
+@inject RecommendationService Service
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Личный менеджер</PageTitle>
+
+<h2>
+    Личный менеджер  рекомендаций <button id="RefreshButton" class="btn btn-success" @onclick="OnRefresh"><i class="bi bi-heart-fill" role="status" style="width: 1.2rem;height: 1.2rem;"></i>&nbsp;Получить рекомендации</button>
+</h2>
+@if (Service.ClassesContinuation == null)
+{
+    <p><em><i class="bi bi-heart-fill"></i>&nbsp;Загрузите данные нажатием кнопки (это займёт порядка одной минуты)...</em></p>
+}
+else
+{
+    <h3>@Service.Person.Name, рекомендуем @(Service.ClassesContinuation.Count == 0 ? "начать" : "продолжить") занятия</h3>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach(var group in Service.ClassesContinuation)
+        {
+            <div class="col">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                </div>
+                <div class="card-body">
+                    <p>@group.DictionaryNavigation.Description</p>
+                </div>
+                <div class="card-footer">
+                    <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                    <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                    <a href="#" class="btn btn-success">Записаться</a>
+                </div>
+            </div>
+            </div>
+        }
+    </div>
+    <br />
+    <h3>@(Service.BodyLive.Count == 0 ? "Не нашли" : "Рекомендуем") новые занятия для тела, вживую</h3>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var group in Service.BodyLive)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>@group.DictionaryNavigation.Description</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                        <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                        <a href="#" class="btn btn-success">Записаться</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <br />
+    <h3>@(Service.SoulLive.Count == 0 ? "Не нашли" : "Рекомендуем") новые занятия для ума, вживую</h3>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var group in Service.SoulLive)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>@group.DictionaryNavigation.Description</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                        <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                        <a href="#" class="btn btn-success">Записаться</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <br />
+    <h3>@(Service.MindLive.Count == 0 ? "Не нашли" : "Рекомендуем") новые занятия для души, вживую</h3>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var group in Service.MindLive)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>@group.DictionaryNavigation.Description</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                        <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                        <a href="#" class="btn btn-success">Записаться</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <br />
+    <h3>@(Service.BodyOnline.Count == 0 ? "Не нашли" : "Рекомендуем") новые занятия для тела, онлайн</h3>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var group in Service.BodyOnline)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>@group.DictionaryNavigation.Description</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                        <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                        <a href="#" class="btn btn-success">Записаться</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <br />
+    <h3>@(Service.SoulOnline.Count == 0 ? "Не нашли" : "Рекомендуем") новые занятия для ума, онлайн</h3>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var group in Service.SoulOnline)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>@group.DictionaryNavigation.Description</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                        <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                        <a href="#" class="btn btn-success">Записаться</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <br />
+    <h3>@(Service.MindOnline.Count == 0 ? "Не нашли" : "Рекомендуем") новые занятия для души, онлайн</h3>
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        @foreach (var group in Service.MindOnline)
+        {
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-header">
+                        <h5 class="card-title">@group.DictionaryNavigation.Title</h5>
+                    </div>
+                    <div class="card-body">
+                        <p>@group.DictionaryNavigation.Description</p>
+                    </div>
+                    <div class="card-footer">
+                        <small class="text-body-secondary">@group.ActiveSchedule</small><br>
+                        <small class="text-body-secondary">@group.PlannedSchedule</small><br>
+                        <a href="#" class="btn btn-success">Записаться</a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <hr />
+}
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+    }
+    protected async void OnRefresh()
+    {
+        await jsRuntime.InvokeAsync<string>("RefreshRecommendation");
+        Refresh();
+    }
+    protected async void Refresh()
+    {
+        var db = RecommendationService.dc;
+        var rec = await Service.GetRecommendationAsync(DateOnly.FromDateTime(DateTime.Now));
+        var tmp = db.StudyGroups.Include(g => g.DictionaryNavigation).ToArray();
+        Service.ClassesContinuation = tmp.Where(g => rec["продолжение"]["занятий"].Find(i => i.Group == g.Id) != null).ToList();
+        Service.SoulOnline = tmp.Where(g => rec["онлайн"]["Для ума"].Find(i => i.Group == g.Id) != null).ToList();
+        Service.MindOnline = tmp.Where(g => rec["онлайн"]["Для души"].Find(i => i.Group == g.Id) != null).ToList();
+        Service.BodyOnline = tmp.Where(g => rec["онлайн"]["Для тела"].Find(i => i.Group == g.Id) != null).ToList();
+        Service.SoulLive = tmp.Where(g => rec["вживую"]["Для ума"].Find(i => i.Group == g.Id) != null).ToList();
+        Service.MindLive = tmp.Where(g => rec["вживую"]["Для души"].Find(i => i.Group == g.Id) != null).ToList();
+        Service.BodyLive = tmp.Where(g => rec["вживую"]["Для тела"].Find(i => i.Group == g.Id) != null).ToList();
+
+        foreach (var key in rec.Keys)
+        {
+            var t = rec[key];
+        }
+        StateHasChanged();
+        await jsRuntime.InvokeAsync<string>("RefreshRecommendation");
+    }
+}

@@ -1,0 +1,397 @@
+﻿@page "/"
+@using System.Globalization;
+@using CsvHelper;
+@using System.Text.RegularExpressions;
+@using longevity_1._0.Data;
+@using Microsoft.VisualBasic.FileIO;
+@using Microsoft.EntityFrameworkCore;
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Начало</PageTitle>
+
+<style>
+    body {
+        background-image: url('/images/bg-main.png');
+        background-position: bottom right;
+        background-repeat: no-repeat;
+        background-size: 30%;
+    }
+</style>
+<section id="HomeMain">
+    <h1 class="position-relative col-10" style="z-index:3;">
+        Центр московского<br />
+        <span class="text-white">долголетия</span>
+        <span class="d-block position-absolute bg-success" style="z-index:-11;left:-103rem;bottom:-0.5rem;height:5rem;width:130.5rem;border-radius:2rem;"></span>
+    </h1>
+    <br />
+
+    <article class="col-8">
+        <a class="btn btn-success" href="Catalog">Смотреть каталог</a>&nbsp;<a class="btn btn-success" href="PersonalManager">Подобрать для Вас</a>
+        @*Городские клубные пространства для общения, досуга
+        и самореализации москвичей старшего поколения -
+        все любимые увлечения в одном месте!*@
+        <SurveyPrompt Content="content\Home" Subject="маркетолог" />
+    </article>
+</section>
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            string key = await jsRuntime.InvokeAsync<string>("onresize");
+            
+            return;
+
+            // Различные технологические фрагменты - исключены, т.к. исполюзуются однократно для конкретных задач
+            LongevityDbContext dc = new(new DbContextOptions<LongevityDbContext>());
+            // Заполнение пользователей фиктивными случайными именами и отчествами по интернет выборкам https://znachenie-tajna-imeni.ru/top-100-zhenskih-imen/ https://starway555.ru/otchestvo/#3
+            //List<string> male = new();
+            //List<string> female = new();
+            //List<string> malepatronymic = new();
+            //List<string> femalepatronymic = new();
+            //using (TextFieldParser parser = new TextFieldParser($@"{Directory.GetCurrentDirectory()}\wwwroot\data\женские имена.txt"))
+            //{
+            //    parser.TextFieldType = FieldType.Delimited;
+            //    parser.SetDelimiters(",");
+            //    while (!parser.EndOfData)
+            //    {
+            //        //Processing row
+            //        string[] fields = parser.ReadFields();
+            //        female.Add(fields[0]);
+            //    }
+            //}
+            //using (TextFieldParser parser = new TextFieldParser($@"{Directory.GetCurrentDirectory()}\wwwroot\data\мужские имена.txt"))
+            //{
+            //    parser.TextFieldType = FieldType.Delimited;
+            //    parser.SetDelimiters(",");
+            //    while (!parser.EndOfData)
+            //    {
+            //        //Processing row
+            //        string[] fields = parser.ReadFields();
+            //        male.Add(fields[0]);
+            //    }
+            //}
+            //using (TextFieldParser parser = new TextFieldParser($@"{Directory.GetCurrentDirectory()}\wwwroot\data\отчества.txt"))
+            //{
+            //    parser.TextFieldType = FieldType.Delimited;
+            //    parser.SetDelimiters(",");
+            //    while (!parser.EndOfData)
+            //    {
+            //        //Processing row
+            //        string[] fields = parser.ReadFields();
+            //        malepatronymic.Add(fields[1]);
+            //        femalepatronymic.Add(fields[2]);
+            //    }
+            //}
+            //foreach (var pers in dc.People)
+            //{
+            //    if (pers.Gender == gender.женщина)
+            //        pers.Name = $"{female[System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, female.Count)]} {femalepatronymic[System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, femalepatronymic.Count)]}";
+            //    if (pers.Gender == gender.мужчина)
+            //        pers.Name = $"{male[System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, male.Count)]} {malepatronymic[System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, malepatronymic.Count)]}";
+            //}
+            //dc.SaveChanges();
+
+            // Заполнение test.csv - основа алгоритма сервиса рекомендаций
+            Console.WriteLine($"Пользователи всего {dc.People.Count()}, без посещений {dc.People.Count(p => dc.Attendance.FirstOrDefault(a => a.PersonId == p.Id) == null)}, Словарь {dc.Dictionaries.Count()}, Посещение занятий {dc.Attendance.Count()}, Группы {dc.StudyGroups.Count()}");
+
+            {
+                DateTime CurrentDate = DateTime.Today;
+                // По указанию кураторов
+                CurrentDate = DateTime.Parse("2023-04-01");
+                DateTime start = DateTime.Now;
+                DateTime stop = DateTime.Now;
+                Console.WriteLine(start);
+                List<StudyGroup> sel = new();
+                var grps = dc.StudyGroups.Include(g => g.DictionaryNavigation);
+                Regex regex = new Regex(@"\d{2}\.\d{2}\.\d{4}");
+
+                foreach (var g in grps)
+                {
+                    string shed = g.PlannedSchedule ?? "" + " " + g.ActiveSchedule ?? "";
+                    MatchCollection matches = regex.Matches(shed);
+                    for (int i = 1; i < matches.Count; i += 2)
+                        if (DateTime.Parse(matches[i].Value) > CurrentDate)
+                        {
+                            g.DictionaryNavigation = dc.Dictionaries.SingleOrDefault(d => d.Id == g.DictionaryId);
+                            if (g.DictionaryNavigation != null)
+                            {
+                                g.DictionaryNavigation.ParentNavigation = dc.Dictionaries.SingleOrDefault(d => d.Id == g.DictionaryNavigation.ParentId);
+                                if (g.DictionaryNavigation.ParentNavigation != null)
+                                    g.DictionaryNavigation.ParentNavigation.ParentNavigation = dc.Dictionaries.SingleOrDefault(d => d.Id == g.DictionaryNavigation.ParentNavigation.ParentId);
+                            }
+                            sel.Add(g);
+                        }
+                }
+
+                var statistics = (from att in dc.Attendance
+                                  group att by new
+                                  {
+                                      Группа = att.GroupId,
+                                      Словарь = att.DictionaryId,
+                                      Возраст = (CurrentDate.Year - att.Visitor.BirthDate.Value.Year),
+                                      Пол = att.Visitor.Gender,
+                                      Область = dc.Dictionaries.Single(a => a.Id == att.DictionaryId).Scope,
+                                      Вид = ((att.Online ?? false) ? "онлайн" : "вживую")
+                                  } into g
+                                  orderby g.Key.Возраст, g.Key.Пол, g.Key.Вид
+                                  select new
+                                  {
+                                      g.Key.Группа,
+                                      g.Key.Словарь,
+                                      g.Key.Вид,
+                                      g.Key.Пол,
+                                      g.Key.Область,
+                                      g.Key.Возраст,
+                                      Посещений = g.Count()
+                                  }).ToArray();
+
+                //var usrs = dc.People.ToArray();
+                List<int> tusr = new();
+                using (TextFieldParser parser = new TextFieldParser($@"{Directory.GetCurrentDirectory()}\wwwroot\data\test.csv"))
+                {
+                    parser.TextFieldType = FieldType.Delimited;
+                    parser.SetDelimiters(",");
+                    while (!parser.EndOfData)
+                    {
+                        //Processing row
+                        string[] fields = parser.ReadFields();
+                        tusr.Add(int.Parse(fields[0]));
+                    }
+                }
+                Person? rndUser = null;
+                int uc = 0;
+                using (var writer = new StreamWriter($@"{System.IO.Directory.GetCurrentDirectory()}\wwwroot\data\testOut.csv"))
+                    foreach (var u in tusr)
+                    {
+                        uc++;
+                        rndUser = dc.People.Single(us => us.Id == u);
+                        //rndUser = usrs[System.Security.Cryptography.RandomNumberGenerator.GetInt32(0, usrs.Length)];
+                        // вариант нового пользователя - без истории посещений
+                        //do
+                        //{
+                        //    if (dc.Attendance.FirstOrDefault(p => p.PersonId == rndUser.Id) != null) rndUser = null;
+                        //} while (rndUser == null);
+                        var age = Age(rndUser.Gender, CurrentDate.Year - rndUser.BirthDate.Value.Year);
+                        var prv = dc.Attendance.Where(p => p.PersonId == rndUser.Id).Select(p => p.LessonId).Distinct().ToArray();
+                        var generalStatistics = (from s in statistics
+                                                 where (!string.IsNullOrEmpty(s.Область.ToString()))
+                                                 group s by new { s.Группа, s.Словарь, Возраст = Age(s.Пол, s.Возраст), s.Пол, s.Область, s.Вид } into g
+                                                 orderby g.Key.Группа, g.Key.Возраст, g.Key.Пол, g.Key.Область, g.Key.Вид
+                                                 select new
+                                                 {
+                                                     g.Key.Группа,
+                                                     g.Key.Словарь,
+                                                     g.Key.Возраст,
+                                                     Область = g.Key.Область?.ToString().Replace("_", " "),
+                                                     g.Key.Пол,
+                                                     g.Key.Вид,
+                                                     Посещений = g.Select(p => p.Посещений).Sum()
+                                                 }).Where(it => it.Пол == rndUser.Gender && it.Возраст == age).ToList();
+                        Console.WriteLine($"{uc}. Групп {rndUser.Gender} {age} доступно на сегодня {sel.Count}, статистика {statistics.Length}, статистика обобщённая {generalStatistics.Count}");
+                        Dictionary<string, Dictionary<string, List<GroupRating>>> groupRatings = new() { { "онлайн", new() { { "Для ума", new List<GroupRating>() }, { "Для души", new List<GroupRating>() }, { "Для тела", new List<GroupRating>() } } }, { "офлайн", new() { { "Для ума", new List<GroupRating>() }, { "Для души", new List<GroupRating>() }, { "Для тела", new List<GroupRating>() } } } };
+                        foreach (var onl in groupRatings.Keys)
+                            foreach (var ar in groupRatings[onl].Keys)
+                                foreach (var g in sel)
+                                {
+                                    var grs = generalStatistics.Where(it => (it.Группа == g.Id) && (it.Возраст == age) && (it.Вид == onl) && (it.Область == ar));
+                                    foreach (var gi in grs)
+                                        groupRatings[onl][ar].Add(new GroupRating { Group = gi.Группа ?? 0, Dict = gi.Словарь ?? 0, Rating = gi.Посещений });
+                                }
+                        foreach (var onl in groupRatings.Keys)
+                            foreach (var ar in groupRatings[onl].Keys)
+                                foreach (var g in sel)
+                                {
+                                    groupRatings[onl][ar].Sort((it1, it2) => it1.Rating.CompareTo(it2.Rating));
+                                    groupRatings[onl][ar].Reverse();
+                                }
+                        foreach (var onl in groupRatings.Keys)
+                            foreach (var ar in groupRatings[onl].Keys)
+                            {
+                                var temp = groupRatings[onl][ar].Take(2).ToList();
+                                groupRatings[onl][ar] = temp;
+                            }
+                        List<Visiting> visit = new();
+                        List<GroupRating> rvisit = new();
+                        if (dc.Attendance.FirstOrDefault(p => p.PersonId == rndUser.Id) != null)
+                        {
+                            int oldid = 0;
+                            var acomp = new AttComparer();
+                            //visit = dc.Attendance.Where(p => p.PersonId == rndUser.Id).ToList().Distinct(acomp).ToList();
+                            visit = dc.Attendance.Where(p => p.PersonId == rndUser.Id).OrderBy(a => a.DictionaryId).ToList();
+                            foreach (var v in visit)
+                            {
+                                if (oldid == v.DictionaryId) continue;
+                                GroupRating? prsnt = null;
+                                foreach (var onl in groupRatings.Keys)
+                                    foreach (var ar in groupRatings[onl].Keys)
+                                    {
+                                        prsnt = groupRatings[onl][ar].Find(g => v.DictionaryId == g.Dict);
+                                        if (prsnt != null)
+                                        {
+                                            rvisit.Add(prsnt);
+                                            oldid = v.DictionaryId ?? 0;
+                                            break;
+                                        }
+                                    }
+                            }
+                            rvisit.Sort((it1, it2) => it1.Rating.CompareTo(it2.Rating));
+                            rvisit.Reverse();
+                        }
+                        Console.WriteLine(rvisit.Count);
+                        //using (var writer = new StreamWriter($@"{System.IO.Directory.GetCurrentDirectory()}\wwwroot\data\test.csv"))
+                        //using (var csv = new CsvWriter(writer, CultureInfo.CurrentCulture))
+                        //{
+                        //    csv.WriteRecords(groupRatings["онлайн"]);
+                        //}
+                        writer.Write($"{u},");
+                        foreach(var r in rvisit)
+                            writer.Write($"{r.Group},");
+                        foreach (var onl in groupRatings.Keys)
+                            foreach (var ar in groupRatings[onl].Keys)
+                                foreach (var r in groupRatings[onl][ar])
+                                    writer.Write($"{r.Group},");
+                        writer.WriteLine();
+                        //if (uc == 10) break;
+                    }
+                stop = DateTime.Now;
+                Console.WriteLine($"{stop}/{stop - start}");
+            }
+            List<StudyGroup> groups = new();
+            using (TextFieldParser parser = new TextFieldParser($@"{Directory.GetCurrentDirectory()}\wwwroot\data\groups.csv"))
+            {
+                parser.TextFieldType = FieldType.Delimited;
+                parser.SetDelimiters(",");
+                int count = 0;
+                int len = 0;
+                int len23 = 0;
+                int cl1 = 0;
+                int cl2 = 0;
+                int cl3 = 0;
+                int cl0 = 0;
+                //Regex regex = new Regex(@"с\s+\d{2}\.\d{2}\.2023\s+по\s+\d{2}\.\d{2}\.2023");
+                //Regex regex = new Regex(@"\d{2}\.\d{2}\.2023");
+                Regex regex = new Regex(@"\d{2}\.\d{2}\.\d{4}");
+                while (!parser.EndOfData)
+                {
+                    //Processing row
+                    string[] fields = parser.ReadFields();
+                    if (count == 0)
+                    {
+                        count++;
+                        continue;
+                    }
+                    len++;
+                    int id = int.Parse(fields[0]);
+                    //string shed = fields[7]/* + "/" + fields[8]*/ + "/" + fields[9];
+                    //MatchCollection matches = regex.Matches(shed);
+                    //if (matches.Count > 2)
+                    //    cl0++;
+                    //for (int i = 1; i < matches.Count; i++)
+                    //{
+                    //    if (DateTime.Parse(matches[i].Value) >= DateTime.Today)
+                    //        len23++;
+                    //    i++;
+                    //}
+                    var les = dc.Attendance.FirstOrDefault(i => i.GroupId == id);
+                    if (les == null)
+                    {
+                        count++;
+                    }
+                    var l1 = dc.Dictionaries.Include(l => l.Items).FirstOrDefault(l => l.Title == fields[1] && l.ParentId == null);
+                    var l2 = dc.Dictionaries.FirstOrDefault(l => l.Title == fields[2] && l1 != null && l.ParentId == l1.Id);
+                    var l3 = dc.Dictionaries.FirstOrDefault(l => l.Title == fields[3] && l2 != null && l.ParentId == l2.Id);
+                    if (l1 == null) cl1++;
+                    if (l2 == null)
+                        cl2++;
+                    if (l3 == null)
+                        cl3++;
+                    groups.Add(new StudyGroup
+                        {
+                            Id = id,
+                            DictionaryId = l3?.Id,
+                            Address = fields[4],
+                            AdministrativeRegion = fields[5],
+                            MunicipalDistrict = fields[6],
+                            ActiveSchedule = fields[7],
+                            ClosedSchedule = fields[8],
+                            PlannedSchedule = fields[9]
+                        });
+                }
+                Console.WriteLine($"{count - 1}/{len23}({cl1},{cl2},{cl3} - {cl0})/{len}");
+            }
+            var stat = (from att in dc.Attendance group att by new { Возраст = (DateTime.Today.Year - att.Visitor.BirthDate.Value.Year), Пол = att.Visitor.Gender, Область = dc.Dictionaries.Single(a => a.Id == att.DictionaryId).Scope, Вид = ((att.Online ?? false) ? "онлайн" : "офлайн") } into g orderby g.Key.Возраст, g.Key.Пол, g.Key.Вид select new { g.Key.Вид, g.Key.Пол, g.Key.Область, g.Key.Возраст, Посещений = g.Count() }).ToArray();
+            using (var writer = new StreamWriter($@"{System.IO.Directory.GetCurrentDirectory()}\wwwroot\data\stat.csv"))
+            using (var csv = new CsvWriter(writer, CultureInfo.CurrentCulture))
+            {
+                csv.WriteRecords(stat);
+            }
+            var gStat = (from s in stat
+                         where (!string.IsNullOrEmpty(s.Область.ToString()))
+                         group s by new { Возраст = Age(s.Пол, s.Возраст), s.Пол, s.Область, s.Вид } into g
+                         orderby g.Key.Возраст, g.Key.Пол, g.Key.Область, g.Key.Вид
+                         select new
+                         {
+                             g.Key.Возраст,
+                             Область = g.Key.Область?.ToString().Replace("_"," "),
+                             g.Key.Пол,
+                             g.Key.Вид,
+                             Посещений = g.Select(p => p.Посещений).Sum()
+                         }).ToArray();
+            using (var writer = new StreamWriter($@"{System.IO.Directory.GetCurrentDirectory()}\wwwroot\data\genStat.csv"))
+            using (var csv = new CsvWriter(writer, CultureInfo.CurrentCulture))
+            {
+                csv.WriteRecords(gStat);
+            }
+        }
+    }
+    private string Age(gender? gender, int age)
+    {
+        if(gender == Data.gender.женщина)
+            switch (age)
+            {
+                case < 60:
+                    return "до 60";
+                case < 74:
+                    return "до 74";
+                case < 80:
+                    return "до 80";
+                case >= 80:
+                    return "с 80 и после";
+            }
+        if (gender == Data.gender.мужчина)
+            switch (age)
+            {
+                case < 64:
+                    return "до 64";
+                case < 78:
+                    return "до 78";
+                case < 87:
+                    return "до 87";
+                case >= 87:
+                    return "с 87 и после";
+            }
+        return "";
+    }
+
+    public record GroupRating
+    {
+        public int Group { get; set; }
+        public int Dict { get; set; }
+        public int Rating { get; set; }
+    }
+
+    public class AttComparer : IEqualityComparer<Visiting>
+    {
+        public bool Equals(Visiting v1,Visiting v2)
+        {
+            return v1?.DictionaryId == v2?.DictionaryId;
+        }
+        public int GetHashCode(Visiting v)
+        {
+            return v.GetHashCode();
+        }
+
+    }
+}

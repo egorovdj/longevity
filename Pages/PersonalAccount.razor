@@ -1,0 +1,95 @@
+﻿@page "/PersonalAccount"
+@inject IJSRuntime jsRuntime
+
+<PageTitle>Личный кабинет</PageTitle>
+
+<div class="row">
+    <div class="col-2 d-none d-lg-block mt-4">
+        
+        <ul class="navbar-nav flex-column" id="HomeMenu">
+            <li class="nav-item">
+                <NavLink class="nav-link" href="PersonalAccount" Match="NavLinkMatch.All"><i class="bi bi-house-door-fill"></i> Главная</NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="#"><i class="bi bi-calendar"></i> Расписание</NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="#"><i class="bi bi-bar-chart"></i> Мой прогресс</NavLink>
+            </li>
+            <li class="nav-item">
+                <NavLink class="nav-link" href="#"><i class="bi bi-chevron-right"></i> Мои занятия</NavLink>
+            </li>
+        </ul>
+    </div>
+    <div class="col-lg-7 col-9">
+        <h2 class="text-success">Здравствуйте, Надежда!</h2>
+        <div class="row"><div class="col text-center" style="zoom:3"><span><i class="bi bi-dot text-success"></i><i class="bi bi-dot text-body-tertiary" style="margin-left: -1rem;"></i><i class="bi bi-dot text-body-tertiary" style="margin-left: -1rem;"></i></span></div></div>
+        
+    </div>
+    <div class="col-lg-3">
+        <h6>Мои занятия</h6>
+        <div class="alert alert-light" role="alert" id="Calendar">
+            <div class="row text-success"><div class="col">@DateTime.Now.ToString("MMMM yyyy")</div></div>
+            <div class="tbl table-sm">
+                <div class="row tbl">
+                    <div class="col-x">Пн</div>
+                    <div class="col-x">Вт</div>
+                    <div class="col-x">Ср</div>
+                    <div class="col-x">Чт</div>
+                    <div class="col-x">Пт</div>
+                    <div class="col-x">Сб</div>
+                    <div class="col-x">Вс</div>
+                </div>
+                <div class="row tbl">
+                    @{
+                        var start = DateTime.Now.AddDays(DateTime.Now.DayOfWeek is DayOfWeek.Sunday ? -6 : -(int)DateTime.Now.DayOfWeek + 1);
+                        for (var i = 0; i < 7; i++)
+                        {
+                            var dt = start.AddDays(i);
+                            if (DateTime.Now.Day == dt.Day)
+                            {
+                                <div class="col-x" style="vertical-align: middle;padding: 0;">
+                                    <span class="text-bg-primary" style="display: inline-block;vertical-align: middle;border-radius: 50%;height: 2rem;width: 2rem;position: relative;padding-top: 0.4rem;">
+                                        @dt.ToString("dd")
+                                    </span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="col-x" style="vertical-align: middle;">@dt.ToString("dd")</div>
+                            }
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="alert alert-success" role="alert">
+            <div class="row">
+                <div class="col-3">10:00 - 11:00</div>
+                <div class="col-9">Аэробика</div>
+            </div>
+        </div>
+        <div class="alert alert-warning" role="alert">
+            <div class="row">
+                <div class="col-3">15:00 - 16:30</div>
+                <div class="col-9">Гимнастика</div>
+            </div>
+        </div>
+        <div class="alert alert-danger" role="alert">
+            <div class="row">
+                <div class="col-3">16:30 - 17:30</div>
+                <div class="col-9">Скандинавская ходьба</div>
+            </div>
+        </div>
+        <h6>Ближайшие события</h6>
+        <div class="alert alert-light" role="alert" id="Events">
+            <div class="row text-success"><div class="col">@DateTime.Now.ToString("MMMM yyyy")</div></div>
+            <div class="row"><div class="col-4 border-start border-3 border-success">22 мая</div><div class="col-8">Концерт</div></div>
+            <div class="row mt-3"><div class="col-4 border-start border-3 border-success">30 мая</div><div class="col-8">Мастер класс</div></div>
+        </div>
+    </div>
+</div>
+
+@code {
+
+}

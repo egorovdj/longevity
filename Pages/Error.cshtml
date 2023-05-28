@@ -1,0 +1,42 @@
+﻿@page
+@model longevity_1._0.Pages.ErrorModel
+
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Ошибка</title>
+    <link href="~/css/bootstrap/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/css/site.css" rel="stylesheet" asp-append-version="true" />
+</head>
+
+<body>
+    <div class="main">
+        <div class="content px-4">
+            <h1 class="text-danger">Ошибка.</h1>
+            <h2 class="text-danger">При обработке вашего запроса произошла ошибка.</h2>
+
+            @if (Model.ShowRequestId)
+            {
+                <p>
+                    <strong>Request ID:</strong> <code>@Model.RequestId</code>
+                </p>
+            }
+
+            <h3>Режим разработки</h3>
+            <p>
+                При переключении на среду <strong>разработки</strong> отображается подробная информация о возникшей ошибке.
+            </p>
+            <p>
+                <strong>Среда разработки не должна быть включена для развернутых приложений.</strong>
+                Это может привести к отображению конфиденциальной информации из исключений конечным пользователям.
+                Для локальной отладки включите среду <strong>Development</strong>, установив для переменной среды <strong>ASP NET CORE_ENVIRONMENT</strong> значение <strong>Development</strong>
+                и перезапуск приложения.
+            </p>
+        </div>
+    </div>
+</body>
+
+</html>
